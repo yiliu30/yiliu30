@@ -12,5 +12,5 @@ jobs:
     steps:
       - uses: lowlighter/metrics@latest
         with:
-          token: ${{ secrets.MTOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN  }}
 

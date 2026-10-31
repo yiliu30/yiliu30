@@ -6,6 +6,8 @@ I have a growing collection of **40+ interactive visualization pages generated b
 
 **[Explore the visualizations →](https://yiliu30.github.io/viz/)**
 
+[![Preview of the five newest visualizations](assets/viz-previews/latest-five-review.png)](https://yiliu30.github.io/viz/)
+
 ![Metrics](github-metrics.svg)
 
 <!-- 

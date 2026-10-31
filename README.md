@@ -7,9 +7,9 @@ I have a growing collection of **40+ interactive visualization pages generated b
 **[Explore the visualizations →](https://yiliu30.github.io/viz/)**
 
 <p align="center">
-  <a href="https://yiliu30.github.io/viz/blockselector_subblock_topk_interactive.html"><img src="assets/viz-previews/blockselector.jpg" width="31%" alt="BlockSelector visualization"></a>
-  <a href="https://yiliu30.github.io/viz/rainfusion_mxfp8_interactive.html"><img src="assets/viz-previews/rainfusion.jpg" width="31%" alt="RainFusion MXFP8 visualization"></a>
-  <a href="https://yiliu30.github.io/viz/tiny_gpu_trace_explorer%20%282%29.html"><img src="assets/viz-previews/tiny-gpu-trace.jpg" width="31%" alt="Tiny-GPU execution trace visualization"></a>
+  <a href="https://yiliu30.github.io/viz/blockselector_subblock_topk_interactive.html"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/viz-previews/blockselector-dark.jpg"><source media="(prefers-color-scheme: light)" srcset="assets/viz-previews/blockselector-light.jpg"><img src="assets/viz-previews/blockselector-dark.jpg" width="31%" alt="BlockSelector visualization"></picture></a>
+  <a href="https://yiliu30.github.io/viz/rainfusion_mxfp8_interactive.html"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/viz-previews/rainfusion-dark.jpg"><source media="(prefers-color-scheme: light)" srcset="assets/viz-previews/rainfusion-light.jpg"><img src="assets/viz-previews/rainfusion-dark.jpg" width="31%" alt="RainFusion MXFP8 visualization"></picture></a>
+  <a href="https://yiliu30.github.io/viz/tiny_gpu_trace_explorer%20%282%29.html"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/viz-previews/tiny-gpu-trace-dark.jpg"><source media="(prefers-color-scheme: light)" srcset="assets/viz-previews/tiny-gpu-trace-light.jpg"><img src="assets/viz-previews/tiny-gpu-trace-dark.jpg" width="31%" alt="Tiny-GPU execution trace visualization"></picture></a>
 </p>
 
 ![Metrics](github-metrics.svg)

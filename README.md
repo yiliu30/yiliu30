@@ -6,7 +6,11 @@ I have a growing collection of **40+ interactive visualization pages generated b
 
 **[Explore the visualizations →](https://yiliu30.github.io/viz/)**
 
-[![Preview of the five newest visualizations](assets/viz-previews/latest-five-review.png)](https://yiliu30.github.io/viz/)
+<p align="center">
+  <a href="https://yiliu30.github.io/viz/blockselector_subblock_topk_interactive.html"><img src="assets/viz-previews/blockselector.jpg" width="31%" alt="BlockSelector visualization"></a>
+  <a href="https://yiliu30.github.io/viz/rainfusion_mxfp8_interactive.html"><img src="assets/viz-previews/rainfusion.jpg" width="31%" alt="RainFusion MXFP8 visualization"></a>
+  <a href="https://yiliu30.github.io/viz/tiny_gpu_trace_explorer%20%282%29.html"><img src="assets/viz-previews/tiny-gpu-trace.jpg" width="31%" alt="Tiny-GPU execution trace visualization"></a>
+</p>
 
 ![Metrics](github-metrics.svg)
 

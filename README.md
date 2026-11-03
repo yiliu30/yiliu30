@@ -39,7 +39,7 @@ I build interactive explanations of GPU architecture, quantization, attention me
 ## 📄 Research
 
 - [Optimize Weight Rounding via Signed Gradient Descent for the Quantization of LLMs](https://aclanthology.org/2024.findings-emnlp.662/) — Findings of EMNLP 2024.
-- [TPAMI](https://ieeexplore.ieee.org/document/11602642).
+- [PrefixQuant: Eliminating Outliers by Prefixed Tokens for Large Language Models Quantization](https://ieeexplore.ieee.org/document/11602642) — TPAMI.
 
 ## 🤝 Let's connect
 

@@ -28,7 +28,7 @@ I maintain [AutoRound](https://github.com/intel/auto-round) and [LLM-Compressor]
 
 I build interactive explanations of GPU architecture, quantization, attention mechanisms, and inference optimization.
 
-**[Explore 40+ interactive visualizations →](https://yiliu30.github.io/viz/)**
+**[Explore 40+ interactive visualizations →](https://yiliu30.github.io/viz/)** · **[Source code: Inference Viz](https://github.com/yiliu30/inference-viz)**
 
 <p align="center">
   <a href="https://yiliu30.github.io/viz/blockselector_subblock_topk_interactive.html"><img src="assets/viz-previews/blockselector-dark.jpg" width="31%" alt="BlockSelector visualization"></a>

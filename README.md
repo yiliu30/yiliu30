@@ -47,6 +47,9 @@ I'm interested in practical ideas that make AI inference more efficient.
 
 If you're working on quantization, attention algorithms, GPU kernels, or inference frameworks, I'd be happy to exchange ideas and collaborate through open source.
 
+- 📧 **Email:** [yi4.liu@intel.com](mailto:yi4.liu@intel.com)
+- 💼 **LinkedIn:** [Randall Liu](https://www.linkedin.com/in/randall-liu-27b076240/)
+
 ---
 
 ![GitHub Metrics](github-metrics.svg)

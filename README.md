@@ -12,6 +12,7 @@ I maintain [AutoRound](https://github.com/intel/auto-round) and [LLM-Compressor]
 |---|---|
 | [AutoRound](https://github.com/intel/auto-round) | Maintainer; quantization algorithms and efficient low-bit inference |
 | [LLM-Compressor](https://github.com/vllm-project/llm-compressor) | Maintainer; quantization workflows, Intel GPU support, CI/CD and community contributions |
+| [vLLM](https://github.com/vllm-project/vllm) | LLM inference optimization, quantization, and GPU backend integration |
 | [vLLM-Omni](https://github.com/vllm-project/vllm-omni) | Multimodal quantization, attention optimization, and model integration |
 | [compressed-tensors](https://github.com/vllm-project/compressed-tensors) | Low-bit quantization formats and backend integration |
 

@@ -14,7 +14,6 @@ I maintain [AutoRound](https://github.com/intel/auto-round) and [LLM-Compressor]
 | [LLM-Compressor](https://github.com/vllm-project/llm-compressor) | Maintainer; quantization workflows, Intel GPU support, CI/CD and community contributions |
 | [vLLM-Omni](https://github.com/vllm-project/vllm-omni) | Multimodal quantization, attention optimization, and model integration |
 | [compressed-tensors](https://github.com/vllm-project/compressed-tensors) | Low-bit quantization formats and backend integration |
-| [Hugging Face Transformers](https://github.com/huggingface/transformers) / [Diffusers](https://github.com/huggingface/diffusers) | AutoRound integration and efficient model deployment |
 
 ## 🔬 What I'm exploring
 

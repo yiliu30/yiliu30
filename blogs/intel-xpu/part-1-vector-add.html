@@ -501,7 +501,7 @@
         <div class="nest-outer" id="nv-grid">
           <div class="grid-title">
             <span class="nv-txt"><strong>1. Grid</strong> (2 Blocks · 256 Threads Total)</span>
-            <span style="color:var(--muted)">Global Memory</span>
+            <span style="color:var(--muted)">CUDA managed memory</span>
           </div>
           <div class="blocks-stack">
             <div class="nest-block nv-block">
@@ -539,7 +539,7 @@
         <div class="nest-outer" id="in-grid">
           <div class="grid-title">
             <span class="in-txt"><strong>1. ND-Range</strong> (Global=256, Local=128 · 2 Work-Groups)</span>
-            <span style="color:var(--muted)">Global USM</span>
+            <span style="color:var(--muted)">Shared USM (logical data)</span>
           </div>
           <div class="blocks-stack">
             <div class="nest-block in-block">
@@ -701,6 +701,7 @@ icpx -O2 -fsycl vector_add_sycl.cpp -o vector_add_sycl
     <li><strong>A correct, runnable kernel comes before performance tuning.</strong></li>
   </ol>
   <h2 id="references">Official Sources and Audit Scope</h2>
+  <p style="font-size:13px;color:var(--muted)">Intel Arc B-series Xe2 documentation distinguishes SIMD vector arithmetic from XMX matrix data types. Managed/shared allocations do not imply permanent device-memory residency.</p>
   <ul>
     <li><a href="https://www.intel.com/content/www/us/en/products/sku/243916/intel-arc-pro-b60-graphics/specifications.html">Intel B60 specifications</a></li>
     <li><a href="https://www.intel.com/content/www/us/en/products/sku/245797/intel-arc-pro-b70-graphics/specifications.html">Intel B70 specifications</a></li>
@@ -709,6 +710,8 @@ icpx -O2 -fsycl vector_add_sycl.cpp -o vector_add_sycl
     <li><a href="https://community.intel.com/t5/Blogs/Products-and-Solutions/HPC/Advancing-Low-Bit-Quantization-for-LLMs-AutoRound-x-LLM/post/1729336">Intel Community: Crescent Island FP8/MXFP8/MXFP4 roadmap</a></li>
     <li><a href="https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2023-2/cuda-and-sycl-programming-model-comparison.html">Intel CUDA/SYCL programming model comparison</a></li>
     <li><a href="https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2025-2/thread-mapping-and-gpu-occupancy.html">Intel GPU thread mapping and occupancy</a></li>
+    <li><a href="https://download.intel.com/newsroom/2024/client-computing/Intel-Arc-B580-B570-Media-Deck.pdf">Intel Arc B-series architecture deck (Xe2 XMX formats)</a></li>
+    <li><a href="https://www.intel.com/content/www/us/en/newsroom/news/artificial-intelligence/intel-offers-day-0-support-for-meta-muse-spark-open.html">Intel GPU D-series MXFP4 hardware acceleration announcement</a></li>
     <li><a href="https://registry.khronos.org/SYCL/specs/sycl-2020/html/sycl-2020.html">Khronos SYCL specification</a></li>
   </ul>
   <p style="font-size:13px;color:var(--muted)">Independent technical review against official published information, November 2026. Not an Intel corporate sign-off or a hardware-tested benchmark.</p>

@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From CUDA to Intel Xe: Your First Vector Add on an Intel GPU</title>
+<style>
+  :root {
+    --bg: #080c12;
+    --panel: #0e1520;
+    --panel2: #131d2b;
+    --border: #223247;
+    --text: #eaf1fa;
+    --muted: #8ea3b8;
+    --nv: #76b900;
+    --nv-glow: rgba(118, 185, 0, 0.16);
+    --intel: #00a8ff;
+    --intel-glow: rgba(0, 168, 255, 0.16);
+    --cyan: #35d6d0;
+    --amber: #f5b955;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(900px 500px at 12% -10%, rgba(118, 185, 0, 0.10), transparent 60%),
+      radial-gradient(900px 500px at 88% -10%, rgba(0, 168, 255, 0.12), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 36px 22px 80px;
+  }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .series-badge {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--cyan);
+    background: rgba(53, 214, 208, 0.1);
+    border: 1px solid rgba(53, 214, 208, 0.35);
+    padding: 5px 12px;
+    border-radius: 999px;
+  }
+  .dl-btn {
+    appearance: none;
+    border: 1px solid rgba(53, 214, 208, 0.5);
+    background: rgba(53, 214, 208, 0.12);
+    color: var(--cyan);
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .dl-btn:hover { background: rgba(53, 214, 208, 0.22); }
+
+  h1 {
+    font-size: clamp(30px, 4.2vw, 46px);
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    margin: 10px 0 14px;
+  }
+  h2 {
+    font-size: clamp(22px, 2.8vw, 29px);
+    margin: 44px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: -0.02em;
+  }
+  h3 {
+    font-size: 18.5px;
+    margin: 26px 0 10px;
+    color: #d7e7f8;
+  }
+  p, li { color: #c4d4e6; font-size: 16px; }
+  a { color: var(--cyan); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 6px;
+    border-radius: 5px;
+    color: var(--cyan);
+  }
+  pre code { background: none; padding: 0; color: inherit; }
+  blockquote {
+    margin: 18px 0;
+    padding: 14px 18px;
+    border-left: 3px solid var(--cyan);
+    background: rgba(53, 214, 208, 0.06);
+    border-radius: 0 10px 10px 0;
+    color: #d4e4f4;
+  }
+  .nv-txt { color: var(--nv); }
+  .in-txt { color: var(--intel); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 22px;
+    font-size: 14.5px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  th, td {
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    background: #070b11;
+  }
+
+  /* Interactive Widget Box */
+  .viz-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin: 22px 0;
+  }
+  .viz-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .simd-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #080d14;
+    border: 1px solid var(--border);
+    padding: 4px;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 11.5px;
+  }
+  .simd-btn {
+    appearance: none;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11.5px;
+    padding: 5px 10px;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .simd-btn.active {
+    background: rgba(0, 168, 255, 0.16);
+    color: #dff4ff;
+    border-color: var(--intel);
+    font-weight: 700;
+  }
+  .level-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .lvl-btn {
+    background: #080d14;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 9px 11px;
+    color: var(--text);
+    text-align: left;
+    font-family: var(--mono);
+    cursor: pointer;
+  }
+  .lvl-btn.active {
+    border-color: var(--cyan);
+    background: rgba(53, 214, 208, 0.12);
+  }
+  .lvl-btn .l-tag { font-size: 10px; color: var(--cyan); }
+  .lvl-btn .l-name { font-size: 12px; font-weight: 700; margin-top: 2px; }
+  .lvl-btn .l-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  .dual-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .arch-card {
+    background: #080d14;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    padding: 14px;
+  }
+  .arch-card.nv { border-top: 3px solid var(--nv); }
+  .arch-card.intel { border-top: 3px solid var(--intel); }
+  .arch-head {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    margin-bottom: 10px;
+  }
+  .nest-outer {
+    border: 1.5px dashed var(--border);
+    border-radius: 10px;
+    padding: 11px;
+    background: rgba(255, 255, 255, 0.015);
+  }
+  .grid-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .blocks-stack { display: flex; flex-direction: column; gap: 9px; }
+  .nest-block {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    background: var(--panel2);
+  }
+  .nest-block.collapsed-block {
+    padding: 8px 11px;
+    background: rgba(19, 29, 43, 0.45);
+    border-style: dashed;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--muted);
+  }
+  .block-hdr {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .sub-focus-box {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px;
+    background: #091019;
+    font-family: var(--mono);
+  }
+  .sub-focus-hdr {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10.5px;
+    margin-bottom: 7px;
+  }
+  .matrix-4x8 {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 4px;
+  }
+  .lane-cell {
+    height: 24px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #e4eef9;
+  }
+  .collapsed-warps-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-top: 7px;
+  }
+  .collapsed-sgs-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 7px;
+  }
+  .collapsed-pill {
+    flex: 1 1 auto;
+    padding: 5px 7px;
+    border-radius: 6px;
+    border: 1px dashed var(--border);
+    background: rgba(9, 16, 25, 0.55);
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .highlight-nv {
+    border-color: var(--nv) !important;
+    box-shadow: 0 0 14px var(--nv-glow);
+    background: rgba(118, 185, 0, 0.09) !important;
+  }
+  .highlight-in {
+    border-color: var(--intel) !important;
+    box-shadow: 0 0 14px var(--intel-glow);
+    background: rgba(0, 168, 255, 0.09) !important;
+  }
+  .lane-cell.highlight-nv {
+    background: var(--nv) !important;
+    color: #050a00;
+    font-weight: 700;
+  }
+  .lane-cell.highlight-in {
+    background: var(--intel) !important;
+    color: #00111f;
+    font-weight: 700;
+  }
+
+  pre {
+    margin: 12px 0;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #05080d;
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    overflow-x: auto;
+    color: #d6e6f7;
+    line-height: 1.5;
+  }
+  @media (max-width: 900px) {
+    .level-tabs, .dual-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <span class="series-badge">Intel XPU for CUDA Developers · Part 1 of 5</span>
+    <button type="button" class="dl-btn" id="downloadBtn">⬇ Download .html Blog</button>
+  </div>
+
+  <h1>From <span class="nv-txt">CUDA</span> to <span class="in-txt">Intel Xe</span>: Your First Vector Add on an Intel GPU</h1>
+  <blockquote>
+    <strong>Tracking:</strong> <a href="https://github.com/yiliu30/yiliu30/issues/10">Issue #10</a><br>
+    <strong>Audience:</strong> Developers familiar with CUDA who want to write their first Intel GPU kernel.
+  </blockquote>
+
+  <p>
+    If you already know how to launch a CUDA kernel, you know most of the concepts needed to get started with Intel GPUs. The terminology and hardware organization differ, but our first example solves the same problem: adding two arrays.
+  </p>
+  <p>
+    We will start with familiar CUDA concepts, introduce their Intel counterparts, show a SYCL kernel, and trace one element conceptually. Diagrams show logical execution rather than a guaranteed physical hardware schedule.
+  </p>
+
+  <h2>1. What is an Intel XPU?</h2>
+  <p>
+    <strong>XPU</strong> is a broad Intel term for heterogeneous compute, not the name of a single GPU instruction set. This article specifically targets <strong>Intel Xe GPUs</strong>. <strong>Xe</strong> names the GPU architecture family; <strong>SYCL</strong> is a cross-vendor C++ programming model; and <strong>oneAPI</strong> provides Intel's programming tools and libraries. These are different layers of the stack.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Layer</th>
+        <th>NVIDIA / CUDA Concept</th>
+        <th>Intel Xe / SYCL Counterpart</th>
+        <th>Important Qualification</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Hardware</strong></td>
+        <td>NVIDIA GPU architecture (Hopper / Blackwell)</td>
+        <td>Intel Xe GPU architecture (Xe2 / Xe3P)</td>
+        <td>Architecture families, <strong>not</strong> direct product or <code>sm_XX</code> equivalents</td>
+      </tr>
+      <tr>
+        <td><strong>Programming Model</strong></td>
+        <td>CUDA language and runtime</td>
+        <td>SYCL with Intel oneAPI</td>
+        <td>Similar purposes, different APIs and ecosystem</td>
+      </tr>
+      <tr>
+        <td><strong>Toolchain</strong></td>
+        <td><code>nvcc</code></td>
+        <td><code>icpx -fsycl</code></td>
+        <td>Compiler / toolchain analogy</td>
+      </tr>
+      <tr>
+        <td><strong>Kernel</strong></td>
+        <td>CUDA kernel launch <code>&lt;&lt;&lt;...&gt;&gt;&gt;</code></td>
+        <td>SYCL <code>parallel_for</code></td>
+        <td>Syntax and dispatch are different</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>2. Which Intel GPUs? Xe2 and Xe3P</h2>
+  <p>We will focus on two architecture generations:</p>
+  <ul>
+    <li><strong>Xe2</strong>: the architecture of the <strong>Intel Arc Pro B60 and B70</strong> (Battlemage).</li>
+    <li><strong>Xe3P</strong>: the architecture of <strong>Crescent Island (CRI)</strong>, also discussed publicly as Intel's GPU D-series, aimed at AI inference.</li>
+  </ul>
+  <p>
+    Think of <strong>Xe2</strong> and <strong>Xe3P</strong> as the <em>type of architectural label</em> that <strong>Hopper</strong> and <strong>Blackwell</strong> are on NVIDIA's side. This is <strong>not</strong> a claim that Xe2 equals Hopper, or that Xe3P equals Blackwell in performance or supported instructions.
+  </p>
+  <table>
+    <thead>
+      <tr>
+        <th>Public Specification</th>
+        <th>B60</th>
+        <th>B70</th>
+        <th>CRI</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><strong>Architecture</strong></td><td>Xe2</td><td>Xe2</td><td>Xe3P</td></tr>
+      <tr><td><strong>Memory</strong></td><td>24 GB GDDR6</td><td>32 GB GDDR6</td><td>Up to 480 GB LPDDR5X</td></tr>
+      <tr><td><strong>Memory Bandwidth</strong></td><td>456 GB/s</td><td>608 GB/s</td><td>Up to 1.5 TB/s (Intel GPU D-series announcement)</td></tr>
+      <tr><td><strong>Target Workload</strong></td><td>Workstation / inference</td><td>Workstation / inference</td><td>Datacenter AI inference</td></tr>
+      <tr><td><strong>Highlighted AI Formats</strong></td><td>FP16 / BF16 / INT8 / INT4 (XMX)</td><td>FP16 / BF16 / INT8 / INT4 (XMX)</td><td><strong>FP8 / MXFP8 / MXFP4</strong> (announced native support)</td></tr>
+    </tbody>
+  </table>
+
+  <p style="font-size:13px;color:var(--muted)">These are published product figures. The data-type row highlights selected <strong>AI/matrix formats</strong>, not all scalar types. Xe2 INT4 refers to XMX matrix dot products, not generic INT4 arithmetic. Intel has publicly described native FP8, MXFP8, and MXFP4 support as an upcoming Crescent Island capability; this does not guarantee native execution for every API operation. <a href="#references">Official sources ↓</a></p>
+  <p>Intel <strong>Xe-Cores</strong> are loosely comparable to NVIDIA <strong>Streaming Multiprocessors (SMs)</strong>; Intel <strong>Xe Vector Engines (XVEs)</strong> to CUDA FP32/INT arithmetic pipelines; and Intel <strong>XMX</strong> to Tensor Cores. These are <strong>approximate conceptual comparisons</strong>, not one-to-one unit mappings. FP32 vector addition runs on the vector path, not XMX.</p>
+  <h2>3. From CUDA to SYCL: The Execution Model</h2>
+  <h3>3.1 Host &amp; Memory Concepts</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>NVIDIA CUDA</th>
+        <th>Intel SYCL</th>
+        <th>Meaning for Vector Add</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>CUDA stream (<code>cudaStream_t</code>)</td>
+        <td>SYCL <strong>queue</strong> (<code>sycl::queue</code>)</td>
+        <td>Approximate submission/ordering counterpart; details differ</td>
+      </tr>
+      <tr>
+        <td><code>cudaMallocManaged</code></td>
+        <td>SYCL <strong>USM</strong> <code>sycl::malloc_shared</code></td>
+        <td>Shared-access allocation; migration semantics are not identical</td>
+      </tr>
+      <tr>
+        <td>CUDA shared memory (<code>__shared__</code>)</td>
+        <td>Intel <strong>SLM</strong>, exposed with SYCL local memory</td>
+        <td>Work-group-shared scratchpad; <strong>not needed here</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>3.2 Interactive Execution Hierarchy: 256 Logical Workers, 2 Groups</h3>
+  <p>
+    The example shows <strong>256 CUDA threads or SYCL work-items</strong>, in two groups of 128. CUDA warps have 32 threads. The Intel pane illustrates a 32- or 16-work-item subgroup. The <strong>4×8 or 2×8 presentation grid is not a physical lane layout</strong>.
+  </p>
+
+  <p style="font-size:13px;color:var(--muted)"><strong>Illustration only:</strong> the SIMD toggle changes the drawing; it does not compile or run different kernels. Actual subgroup width and work-item membership depend on the compiler, kernel and device. The optional <code>[[sycl::reqd_sub_group_size(N)]]</code> requests a width supported by the target device.</p>
+  <!-- INTERACTIVE HIERARCHY WIDGET -->
+  <div class="viz-panel">
+    <div class="viz-header">
+      <span style="font-family:var(--mono);font-size:12px;color:var(--cyan)">
+        Interactive Map · Click Any Level (1–4) or Toggle Intel Sub-group Size
+      </span>
+      <div class="simd-switch">
+        <span style="color:var(--muted);padding:0 6px">Sub-group:</span>
+        <button type="button" class="simd-btn active" id="btnSimd32">SIMD32 (4×8 = 32 WIs)</button>
+        <button type="button" class="simd-btn" id="btnSimd16">SIMD16 (2×8 = 16 WIs)</button>
+      </div>
+    </div>
+
+    <div class="level-tabs" id="levelTabs"></div>
+
+    <div class="dual-grid">
+      <!-- CUDA SIDE -->
+      <div class="arch-card nv">
+        <div class="arch-head">
+          <strong class="nv-txt">NVIDIA CUDA · kernel&lt;&lt;&lt;2, 128&gt;&gt;&gt;</strong>
+          <span>Warp 0 = 4×8 (32 Threads)</span>
+        </div>
+        <div class="nest-outer" id="nv-grid">
+          <div class="grid-title">
+            <span class="nv-txt"><strong>1. Grid</strong> (2 Blocks · 256 Threads Total)</span>
+            <span style="color:var(--muted)">Global Memory</span>
+          </div>
+          <div class="blocks-stack">
+            <div class="nest-block nv-block">
+              <div class="block-hdr">
+                <span><strong>2. Block 0</strong> (blockIdx.x = 0 · T0..T127) (assigned to an SM by the scheduler)</span>
+                <span style="color:var(--muted)">128 Threads</span>
+              </div>
+              <div class="sub-focus-box nv-warp">
+                <div class="sub-focus-hdr">
+                  <strong class="nv-txt">3. Warp 0 (Expanded 4×8 Matrix: T0..T31)</strong>
+                  <span style="color:var(--muted)">lane 0..31</span>
+                </div>
+                <div class="matrix-4x8" id="nv-warp0-matrix"></div>
+              </div>
+              <div class="collapsed-warps-row">
+                <div class="collapsed-pill nv-warp"><strong>Warp 1</strong> · T32..T63</div>
+                <div class="collapsed-pill nv-warp"><strong>Warp 2</strong> · T64..T95</div>
+                <div class="collapsed-pill nv-warp"><strong>Warp 3</strong> · T96..T127</div>
+              </div>
+            </div>
+            <div class="nest-block collapsed-block nv-block">
+              <span><strong>2. Block 1</strong> (blockIdx.x = 1 · T128..T255) (SM not predetermined)</span>
+              <span>Warps 0..3 (4 × 32)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INTEL SYCL SIDE -->
+      <div class="arch-card intel">
+        <div class="arch-head">
+          <strong class="in-txt">Intel SYCL · nd_range&lt;1&gt;{256, 128}</strong>
+          <span id="intelCardSub">Sub-group 0 = 4×8 (32 WIs)</span>
+        </div>
+        <div class="nest-outer" id="in-grid">
+          <div class="grid-title">
+            <span class="in-txt"><strong>1. ND-Range</strong> (Global=256, Local=128 · 2 Work-Groups)</span>
+            <span style="color:var(--muted)">Global USM</span>
+          </div>
+          <div class="blocks-stack">
+            <div class="nest-block in-block">
+              <div class="block-hdr">
+                <span><strong>2. Work-Group 0</strong> (group = 0 · WI 0..127) (assigned to a Xe-Core)</span>
+                <span style="color:var(--muted)">128 Work-Items</span>
+              </div>
+              <div class="sub-focus-box in-sg">
+                <div class="sub-focus-hdr">
+                  <strong class="in-txt" id="inSg0Title">3. Sub-group 0 (Expanded 4×8 Matrix: WI 0..31)</strong>
+                  <span style="color:var(--muted)" id="inSg0Range">lane 0..31</span>
+                </div>
+                <div class="matrix-4x8" id="in-sg0-matrix"></div>
+              </div>
+              <div class="collapsed-sgs-row" id="in-other-sgs"></div>
+            </div>
+            <div class="nest-block collapsed-block in-block">
+              <span><strong>2. Work-Group 1</strong> (group = 1 · WI 128..255) (Xe-Core not predetermined)</span>
+              <span id="inWg1Summary">Sub-groups 0..3 (4 × 32)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="font-size:13px;color:var(--muted)">The numeric block/work-group IDs are logical kernel indices, not physical SM/Xe-Core numbers. Multiple groups can execute on the same hardware unit, depending on available resources and scheduling.</p>
+  <h3>3.3 What's <code>ND-range</code> and Work-Item Indexing?</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>NVIDIA CUDA</th>
+        <th>Intel SYCL (<code>sycl::nd_item&lt;1&gt; item</code>)</th>
+        <th>Meaning (for 256 Total, 2 Groups of 128)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>blockIdx.x</code></td>
+        <td><code>item.get_group(0)</code></td>
+        <td>Work-group index (<code>0</code> or <code>1</code>)</td>
+      </tr>
+      <tr>
+        <td><code>threadIdx.x</code></td>
+        <td><code>item.get_local_id(0)</code></td>
+        <td>Position within one work-group (<code>0..127</code>)</td>
+      </tr>
+      <tr>
+        <td><code>blockIdx.x * blockDim.x + threadIdx.x</code></td>
+        <td><code>item.get_global_id(0)</code></td>
+        <td>Global element index (<code>0..255</code>)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>4. Your First Intel GPU Kernel: Vector Add</h2>
+  <p>
+    Below are minimal CUDA and Intel SYCL programs, each launching <strong>256 logical workers in two groups of 128</strong>. CUDA uses 32-thread warps; the SYCL program leaves subgroup selection to the compiler. The interactive SIMD toggle does not modify the programs.
+  </p>
+
+  <div class="dual-grid">
+    <div>
+      <h3>CUDA Complete Example (<code>vector_add_cuda.cu</code>)</h3>
+<pre><code>#include &lt;cuda_runtime.h&gt;
+#include &lt;iostream&gt;
+
+__global__ void vector_add(
+    const float* a, const float* b, float* c, int n) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i &lt; n) {
+    c[i] = a[i] + b[i];
+  }
+}
+
+int main() {
+  constexpr int N = 256;
+  constexpr int block_size = 128; // 2 blocks of 128
+
+  float *a, *b, *c;
+  cudaMallocManaged(&amp;a, N * sizeof(float));
+  cudaMallocManaged(&amp;b, N * sizeof(float));
+  cudaMallocManaged(&amp;c, N * sizeof(float));
+
+  for (int i = 0; i &lt; N; ++i) {
+    a[i] = float(i);
+    b[i] = float(2 * i);
+  }
+
+  vector_add&lt;&lt;&lt;2, block_size&gt;&gt;&gt;(a, b, c, N);
+  if (cudaGetLastError() != cudaSuccess ||
+      cudaDeviceSynchronize() != cudaSuccess) return 1;
+
+  bool ok = true;
+  for (int i = 0; i &lt; N; ++i)
+    if (c[i] != float(3 * i)) { ok = false; break; }
+  std::cout &lt;&lt; "c[255] = " &lt;&lt; c[255]
+            &lt;&lt; (ok ? " | PASS" : " | FAIL") &lt;&lt; "\n";
+  cudaFree(a); cudaFree(b); cudaFree(c);
+  return ok ? 0 : 1;
+}</code></pre>
+    </div>
+
+    <div>
+      <h3>Intel SYCL Complete Example (<code>vector_add_sycl.cpp</code>)</h3>
+<pre><code>#include &lt;sycl/sycl.hpp&gt;
+#include &lt;iostream&gt;
+
+int main() {
+  constexpr std::size_t N = 256;
+  constexpr std::size_t local_size = 128; // 2 work-groups
+
+  sycl::queue q{sycl::gpu_selector_v};
+
+  float* a = sycl::malloc_shared&lt;float&gt;(N, q);
+  float* b = sycl::malloc_shared&lt;float&gt;(N, q);
+  float* c = sycl::malloc_shared&lt;float&gt;(N, q);
+
+  for (std::size_t i = 0; i &lt; N; ++i) {
+    a[i] = float(i);
+    b[i] = float(2 * i);
+  }
+
+  q.parallel_for(
+      sycl::nd_range&lt;1&gt;{sycl::range&lt;1&gt;(N),
+                        sycl::range&lt;1&gt;(local_size)},
+      [=](sycl::nd_item&lt;1&gt; item)
+          {
+        std::size_t i = item.get_global_id(0);
+        if (i &lt; N) {
+          c[i] = a[i] + b[i];
+        }
+      }).wait_and_throw();
+
+  bool ok = true;
+  for (std::size_t i = 0; i &lt; N; ++i)
+    if (c[i] != float(3 * i)) { ok = false; break; }
+  std::cout &lt;&lt; "c[255] = " &lt;&lt; c[255]
+            &lt;&lt; (ok ? " | PASS" : " | FAIL") &lt;&lt; "\n";
+  sycl::free(a, q); sycl::free(b, q); sycl::free(c, q);
+  return ok ? 0 : 1;
+}</code></pre>
+    </div>
+  </div>
+
+  <p><strong>Build instructions:</strong></p>
+  <pre><code>nvcc -O2 vector_add_cuda.cu -o vector_add_cuda
+./vector_add_cuda
+
+# With Intel oneAPI DPC++ and a supported GPU runtime:
+icpx -O2 -fsycl vector_add_sycl.cpp -o vector_add_sycl
+./vector_add_sycl</code></pre>
+  <p style="font-size:13px;color:var(--muted)">Calculated expected output: <code>c[255] = 765 | PASS</code>. This has not been measured on B60, B70, or CRI during this audit. The concise examples still assume successful allocations; production code should include full allocation and exception checks.</p>
+  <h2>5. What You Should Remember</h2>
+  <ol>
+    <li><strong>Xe2/Xe3P ↔ Hopper/Blackwell</strong> is a comparison of GPU <em>architecture generations</em>, not a 1:1 compute capability mapping.</li>
+    <li><strong>CUDA thread/block/warp ↔ SYCL work-item/work-group/sub-group</strong> is a useful analogy, but actual subgroup widths/membership depend on the target. An optional size requirement must be supported by the device; a 4×8 display does not describe physical SIMD arrangement.</li>
+    <li><strong>The vector-add arithmetic is identical</strong> in CUDA and SYCL. Most changes are in launch syntax, memory APIs, and indexing.</li>
+    <li><strong>Vector add runs on Xe Vector Engines (XVEs)</strong>, analogous in purpose to NVIDIA's general FP32 execution pipelines—not XMX/Tensor Cores.</li>
+    <li><strong>A correct, runnable kernel comes before performance tuning.</strong></li>
+  </ol>
+  <h2 id="references">Official Sources and Audit Scope</h2>
+  <ul>
+    <li><a href="https://www.intel.com/content/www/us/en/products/sku/243916/intel-arc-pro-b60-graphics/specifications.html">Intel B60 specifications</a></li>
+    <li><a href="https://www.intel.com/content/www/us/en/products/sku/245797/intel-arc-pro-b70-graphics/specifications.html">Intel B70 specifications</a></li>
+    <li><a href="https://www.intel.com/content/www/us/en/newsroom/news/client-computing/intel-outlines-architectures-for-agentic-ai-at-hot-chips-2026.html">Intel Hot Chips 2026: Crescent Island</a></li>
+    <li><a href="https://www.intel.com/content/www/us/en/newsroom/news/artificial-intelligence/intel-accelerates-open-infrastructure-agentic-ai-era.html">Intel GPU D-series update: Xe3P, memory, FP8</a></li>
+    <li><a href="https://community.intel.com/t5/Blogs/Products-and-Solutions/HPC/Advancing-Low-Bit-Quantization-for-LLMs-AutoRound-x-LLM/post/1729336">Intel Community: Crescent Island FP8/MXFP8/MXFP4 roadmap</a></li>
+    <li><a href="https://www.intel.com/content/www/us/en/docs/dpcpp-compatibility-tool/developer-guide-reference/2023-2/cuda-and-sycl-programming-model-comparison.html">Intel CUDA/SYCL programming model comparison</a></li>
+    <li><a href="https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2025-2/thread-mapping-and-gpu-occupancy.html">Intel GPU thread mapping and occupancy</a></li>
+    <li><a href="https://registry.khronos.org/SYCL/specs/sycl-2020/html/sycl-2020.html">Khronos SYCL specification</a></li>
+  </ul>
+  <p style="font-size:13px;color:var(--muted)">Independent technical review against official published information, November 2026. Not an Intel corporate sign-off or a hardware-tested benchmark.</p>
+</div>
+
+<script>
+(function() {
+  let simdWidth = 32;
+  let active = 2;
+
+  const nvMatrix = document.getElementById('nv-warp0-matrix');
+  nvMatrix.innerHTML = Array.from({ length: 32 }, (_, i) =>
+    `<div class="lane-cell nv-lane">T${i}</div>`
+  ).join('');
+
+  function render() {
+    const sgCount = 128 / simdWidth;
+    const rows = simdWidth / 8;
+
+    document.getElementById('btnSimd32').classList.toggle('active', simdWidth === 32);
+    document.getElementById('btnSimd16').classList.toggle('active', simdWidth === 16);
+
+    document.getElementById('intelCardSub').textContent = `Sub-group 0 = ${rows}×8 (${simdWidth} WIs)`;
+    document.getElementById('inSg0Title').textContent = `3. Sub-group 0 (Expanded ${rows}×8 Matrix: WI 0..${simdWidth - 1})`;
+    document.getElementById('inSg0Range').textContent = `lane 0..${simdWidth - 1}`;
+    document.getElementById('inWg1Summary').textContent = `Sub-groups 0..${sgCount - 1} (${sgCount} × ${simdWidth})`;
+
+    document.getElementById('in-sg0-matrix').innerHTML = Array.from({ length: simdWidth }, (_, i) =>
+      `<div class="lane-cell in-lane">WI ${i}</div>`
+    ).join('');
+
+    const otherSgs = document.getElementById('in-other-sgs');
+    if (simdWidth === 32) {
+      otherSgs.innerHTML = [1, 2, 3].map(sg =>
+        `<div class="collapsed-pill in-sg"><strong>SG ${sg}</strong> · WI ${sg*32}..${sg*32+31}</div>`
+      ).join('');
+    } else {
+      otherSgs.innerHTML = `<div class="collapsed-pill in-sg"><strong>+ Sub-groups 1..7</strong> (7 × 16 WIs = WI 16..127)</div>`;
+    }
+
+    const levels = [
+      { tag: 'Level 1 · Global', name: 'Grid vs. ND-Range', sub: '256 total workers' },
+      { tag: 'Level 2 · Group', name: '2 Blocks vs. 2 WGs', sub: '128 workers per group' },
+      { tag: 'Level 3 · SIMD', name: `4 Warps vs. ${sgCount} SGs`, sub: `Warp 0 / SG 0 (${rows}×8)` },
+      { tag: 'Level 4 · Worker', name: 'Thread vs. Work-Item', sub: 'Each cell in matrix' }
+    ];
+
+    const tabs = document.getElementById('levelTabs');
+    tabs.innerHTML = levels.map((l, i) => `
+      <button type="button" class="lvl-btn ${i === active ? 'active' : ''}" data-i="${i}">
+        <div class="l-tag">${l.tag}</div>
+        <div class="l-name">${l.name}</div>
+        <div class="l-sub">${l.sub}</div>
+      </button>
+    `).join('');
+
+    tabs.querySelectorAll('.lvl-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        active = Number(btn.getAttribute('data-i'));
+        render();
+      });
+    });
+
+    document.querySelectorAll('.highlight-nv, .highlight-in').forEach(el => {
+      el.classList.remove('highlight-nv', 'highlight-in');
+    });
+
+    if (active === 0) {
+      document.getElementById('nv-grid').classList.add('highlight-nv');
+      document.getElementById('in-grid').classList.add('highlight-in');
+    } else if (active === 1) {
+      document.querySelectorAll('.nv-block').forEach(el => el.classList.add('highlight-nv'));
+      document.querySelectorAll('.in-block').forEach(el => el.classList.add('highlight-in'));
+    } else if (active === 2) {
+      document.querySelectorAll('.nv-warp').forEach(el => el.classList.add('highlight-nv'));
+      document.querySelectorAll('.in-sg').forEach(el => el.classList.add('highlight-in'));
+    } else if (active === 3) {
+      document.querySelectorAll('.nv-lane').forEach(el => el.classList.add('highlight-nv'));
+      document.querySelectorAll('.in-lane').forEach(el => el.classList.add('highlight-in'));
+    }
+  }
+
+  document.getElementById('btnSimd32').addEventListener('click', () => { simdWidth = 32; render(); });
+  document.getElementById('btnSimd16').addEventListener('click', () => { simdWidth = 16; render(); });
+
+  document.getElementById('downloadBtn').addEventListener('click', () => {
+    const html = '<!doctype html>\n' + document.documentElement.outerHTML;
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'from-cuda-to-intel-xe-blog.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

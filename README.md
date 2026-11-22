@@ -16,6 +16,10 @@ I maintain [AutoRound](https://github.com/intel/auto-round) and [LLM-Compressor]
 | [vLLM-Omni](https://github.com/vllm-project/vllm-omni) | Multimodal quantization, attention optimization, and model integration |
 | [compressed-tensors](https://github.com/vllm-project/compressed-tensors) | Low-bit quantization formats and backend integration |
 
+## 🛠️ Personal Projects
+
+- [**Xe-IKT (Intra Kernel Tracer)**](https://github.com/yiliu30/xe-ikt) — Subgroup-level tracing for Intel Xe/SYCL kernels, with real FlashAttention traces and Perfetto integration. Independent personal project.
+
 ## 🔬 What I'm exploring
 
 - **Low-bit inference:** INT4, FP8, MXFP4/MXFP8, NVFP4, and accuracy-performance tradeoffs.
